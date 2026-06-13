@@ -1,0 +1,10 @@
+.venv/
+src/.venv/
+**/__pycache__/
+*.pyc
+.ruff_cache/
+.git/
+.env
+.DS_Store
+**/.DS_Store
+tests/
