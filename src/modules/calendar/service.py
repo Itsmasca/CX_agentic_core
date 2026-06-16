@@ -59,10 +59,17 @@ class CalendarService:
         (30 por defecto). La respuesta viene mapeada por dia (`YYYY-MM-DD`)
         con su lista de slots disponibles.
         """
-        start_ms = _to_epoch_ms(start) if start is not None else int(time.time() * 1000)
-        end_ms = (
-            _to_epoch_ms(end) if end is not None else start_ms + days_ahead * 86_400_000
-        )
+        now_ms = int(time.time() * 1000)
+        window_ms = days_ahead * 86_400_000
+        start_ms = _to_epoch_ms(start) if start is not None else now_ms
+        # Defensa: los LLM calculan mal epoch ms y mandan fechas pasadas. Nunca
+        # tiene sentido pedir disponibilidad en el pasado -> usar "ahora".
+        if start_ms < now_ms:
+            start_ms = now_ms
+        end_ms = _to_epoch_ms(end) if end is not None else start_ms + window_ms
+        # Si el fin es invalido o <= inicio, usar la ventana por defecto.
+        if end_ms <= start_ms:
+            end_ms = start_ms + window_ms
         return self.client.get(
             f"/calendars/{calendar_id}/free-slots",
             params={
