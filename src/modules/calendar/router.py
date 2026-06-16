@@ -33,12 +33,16 @@ def list_calendars(service: ServiceDep, location_id: str | None = None):
 def get_free_slots(
     calendar_id: str,
     service: ServiceDep,
-    start_date: Annotated[int, Query(description="epoch ms")],
-    end_date: Annotated[int, Query(description="epoch ms")],
+    start_date: Annotated[
+        int | None, Query(description="epoch ms; default: ahora")
+    ] = None,
+    end_date: Annotated[
+        int | None, Query(description="epoch ms; default: +30 dias")
+    ] = None,
     timezone: str | None = None,
     user_id: str | None = None,
 ):
-    """Slots libres de un calendario en un rango (fechas en epoch ms)."""
+    """Slots libres de un calendario. Sin fechas: de ahora a +30 dias."""
     return service.get_free_slots(
         calendar_id, start_date, end_date, timezone=timezone, user_id=user_id
     )

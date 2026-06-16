@@ -54,15 +54,17 @@ def list_calendars(location_id: str | None = None) -> list[dict[str, Any]]:
 @mcp.tool()
 def get_free_slots(
     calendar_id: str,
-    start_date: int,
-    end_date: int,
+    start_date: int | None = None,
+    end_date: int | None = None,
     timezone: str | None = None,
     user_id: str | None = None,
 ) -> dict[str, Any]:
-    """Devuelve los slots libres de un calendario en un rango de fechas.
+    """Devuelve los slots libres de un calendario.
 
-    start_date y end_date van en epoch milisegundos. La respuesta viene
-    mapeada por dia (YYYY-MM-DD) con su lista de slots disponibles.
+    start_date y end_date van en epoch milisegundos y son OPCIONALES: lo
+    recomendado es OMITIRLOS, y entonces consulta desde ahora hasta +30 dias
+    (evita errores al calcular fechas). La respuesta viene mapeada por dia
+    (YYYY-MM-DD) con su lista de slots; ofrece al usuario los mas proximos.
     """
     return _calendar.get_free_slots(
         calendar_id, start_date, end_date, timezone=timezone, user_id=user_id

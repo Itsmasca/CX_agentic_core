@@ -7,6 +7,7 @@ sobre el `GHLClient` del core.
 
 from __future__ import annotations
 
+import time
 from datetime import date, datetime
 from typing import Any
 
@@ -45,22 +46,28 @@ class CalendarService:
     def get_free_slots(
         self,
         calendar_id: str,
-        start: int | datetime | date,
-        end: int | datetime | date,
+        start: int | datetime | date | None = None,
+        end: int | datetime | date | None = None,
         *,
         timezone: str | None = None,
         user_id: str | None = None,
+        days_ahead: int = 30,
     ) -> dict[str, Any]:
         """Devuelve los slots libres de un calendario en un rango de fechas.
 
-        La respuesta viene mapeada por dia (`YYYY-MM-DD`) con su lista de
-        slots disponibles.
+        Si no se pasan fechas, consulta desde ahora hasta `days_ahead` dias
+        (30 por defecto). La respuesta viene mapeada por dia (`YYYY-MM-DD`)
+        con su lista de slots disponibles.
         """
+        start_ms = _to_epoch_ms(start) if start is not None else int(time.time() * 1000)
+        end_ms = (
+            _to_epoch_ms(end) if end is not None else start_ms + days_ahead * 86_400_000
+        )
         return self.client.get(
             f"/calendars/{calendar_id}/free-slots",
             params={
-                "startDate": _to_epoch_ms(start),
-                "endDate": _to_epoch_ms(end),
+                "startDate": start_ms,
+                "endDate": end_ms,
                 "timezone": timezone,
                 "userId": user_id,
             },
