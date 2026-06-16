@@ -169,6 +169,42 @@ def create_contact(
     )
 
 
+@mcp.tool()
+def search_contacts(query: str | None = None, limit: int = 20) -> dict[str, Any]:
+    """Busca/lista contactos de la subcuenta de GHL.
+
+    Usa esta tool para encontrar el contact_id de un contacto (por ejemplo,
+    para luego agendar una cita con create_appointment). `query` es texto libre
+    que matchea nombre/email/telefono; omitelo para listar. `limit` por defecto
+    20, maximo 100. Devuelve {"contacts": [...], "total": n}.
+    """
+    return _contacts.search_contacts(query=query, limit=limit)
+
+
+@mcp.tool()
+def update_contact(
+    contact_id: str,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    source: str | None = None,
+) -> dict[str, Any]:
+    """Actualiza un contacto existente (update parcial). Solo se mandan los
+    campos no vacios; debe venir al menos uno."""
+    fields = {
+        "firstName": first_name,
+        "lastName": last_name,
+        "email": email,
+        "phone": phone,
+        "source": source,
+    }
+    fields = {k: v for k, v in fields.items() if v is not None}
+    if not fields:
+        raise ValueError("Se requiere al menos un campo para actualizar.")
+    return _contacts.update_contact(contact_id, **fields)
+
+
 if __name__ == "__main__":
     # Modo standalone (dev). Con streamable_http_path="/" el endpoint queda en
     # http://<host>:<port>/ . En produccion se sirve montado en /mcp via server.py.

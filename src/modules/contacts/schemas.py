@@ -28,3 +28,32 @@ class CreateContactRequest(BaseModel):
         if not self.email and not self.phone:
             raise ValueError("Se requiere al menos 'email' o 'phone'.")
         return self
+
+
+class UpdateContactRequest(BaseModel):
+    """Body para actualizar un contacto (update parcial).
+
+    Todos los campos son opcionales, pero debe venir al menos uno. Solo se
+    mandan a GHL los campos presentes.
+    """
+
+    first_name: str | None = Field(None, alias="firstName")
+    last_name: str | None = Field(None, alias="lastName")
+    email: EmailStr | None = None
+    phone: str | None = None
+    source: str | None = None
+
+    model_config = {"populate_by_name": True}
+
+    @model_validator(mode="after")
+    def _require_at_least_one(self) -> UpdateContactRequest:
+        """Un update sin campos no tiene nada que cambiar."""
+        if not any(
+            (self.first_name, self.last_name, self.email, self.phone, self.source)
+        ):
+            raise ValueError("Se requiere al menos un campo para actualizar.")
+        return self
+
+    def to_ghl_payload(self) -> dict:
+        """Campos en camelCase, omitiendo los que vienen vacios."""
+        return self.model_dump(by_alias=True, exclude_none=True)
