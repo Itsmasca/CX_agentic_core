@@ -16,6 +16,7 @@ from fastapi.responses import JSONResponse
 from core.client import GHLClient
 from core.errors import GHLAPIError
 from mcp_server import mcp
+from modules.booking import router as booking_router
 from modules.calendar import router as calendar_router
 from modules.contacts import router as contacts_router
 
@@ -72,6 +73,7 @@ def health():
 # --- vertical slices -----------------------------------------------------
 app.include_router(calendar_router)
 app.include_router(contacts_router)
+app.include_router(booking_router)
 
 # --- MCP -----------------------------------------------------------------
 # Server MCP (Streamable HTTP) montado en /mcp; comparte proceso con el REST.
