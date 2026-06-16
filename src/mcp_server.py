@@ -22,17 +22,22 @@ from mcp.server.fastmcp import FastMCP
 
 from core.client import GHLClient
 from modules.calendar.service import CalendarService
+from modules.contacts.service import ContactsService
 
-# host/port configurables por entorno; /mcp es el path del transporte HTTP.
+# streamable_http_path="/" para que, al montarlo en FastAPI bajo "/mcp",
+# el endpoint quede exactamente en /mcp (sin duplicar el segmento).
+# host/port solo aplican al modo standalone (__main__).
 mcp = FastMCP(
     "CXAPP - GHL Core",
     host=os.environ.get("MCP_HOST", "0.0.0.0"),
     port=int(os.environ.get("MCP_PORT", "8000")),
+    streamable_http_path="/",
 )
 
 # Un solo cliente HTTP para todo el proceso (lee credenciales del entorno/.env).
 _client = GHLClient()
 _calendar = CalendarService(_client)
+_contacts = ContactsService(_client)
 
 
 # --- calendar slice ------------------------------------------------------
@@ -135,7 +140,35 @@ def delete_appointment(event_id: str) -> str:
     return f"Evento {event_id} eliminado."
 
 
+# --- contacts slice ------------------------------------------------------
+@mcp.tool()
+def create_contact(
+    first_name: str | None = None,
+    last_name: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    tags: list[str] | None = None,
+    source: str | None = None,
+) -> dict[str, Any]:
+    """Crea un contacto en la subcuenta de GHL.
+
+    Requiere al menos email o telefono para identificar al contacto. El
+    location se toma de la config; devuelve el contacto creado con su id.
+    """
+    if not email and not phone:
+        raise ValueError("Se requiere al menos 'email' o 'phone'.")
+    return _contacts.create_contact(
+        first_name=first_name,
+        last_name=last_name,
+        email=email,
+        phone=phone,
+        tags=tags,
+        source=source,
+    )
+
+
 if __name__ == "__main__":
-    # Streamable HTTP: clientes remotos se conectan a http://<host>:<port>/mcp
+    # Modo standalone (dev). Con streamable_http_path="/" el endpoint queda en
+    # http://<host>:<port>/ . En produccion se sirve montado en /mcp via server.py.
     # Para stdio (Claude Desktop local), usa: mcp.run()
     mcp.run(transport="streamable-http")
