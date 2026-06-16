@@ -21,6 +21,7 @@ from typing import Any
 from mcp.server.fastmcp import FastMCP
 
 from core.client import GHLClient
+from modules.booking.service import BookingService
 from modules.calendar.service import CalendarService
 from modules.contacts.service import ContactsService
 
@@ -38,6 +39,7 @@ mcp = FastMCP(
 _client = GHLClient()
 _calendar = CalendarService(_client)
 _contacts = ContactsService(_client)
+_booking = BookingService(_client)
 
 
 # --- calendar slice ------------------------------------------------------
@@ -166,6 +168,105 @@ def create_contact(
         phone=phone,
         tags=tags,
         source=source,
+    )
+
+
+@mcp.tool()
+def search_contacts(query: str | None = None, limit: int = 20) -> dict[str, Any]:
+    """Busca/lista contactos de la subcuenta de GHL.
+
+    Usa esta tool para encontrar el contact_id de un contacto (por ejemplo,
+    para luego agendar una cita con create_appointment). `query` es texto libre
+    que matchea nombre/email/telefono; omitelo para listar. `limit` por defecto
+    20, maximo 100. Devuelve {"contacts": [...], "total": n}.
+    """
+    return _contacts.search_contacts(query=query, limit=limit)
+
+
+@mcp.tool()
+def update_contact(
+    contact_id: str,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    email: str | None = None,
+    phone: str | None = None,
+    source: str | None = None,
+) -> dict[str, Any]:
+    """Actualiza un contacto existente (update parcial). Solo se mandan los
+    campos no vacios; debe venir al menos uno."""
+    fields = {
+        "firstName": first_name,
+        "lastName": last_name,
+        "email": email,
+        "phone": phone,
+        "source": source,
+    }
+    fields = {k: v for k, v in fields.items() if v is not None}
+    if not fields:
+        raise ValueError("Se requiere al menos un campo para actualizar.")
+    return _contacts.update_contact(contact_id, **fields)
+
+
+# --- booking slice -------------------------------------------------------
+@mcp.tool()
+def resolve_contact(
+    email: str | None = None,
+    phone: str | None = None,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    source: str | None = None,
+) -> dict[str, Any]:
+    """Resuelve identificadores a un unico contacto (find-or-create).
+
+    Busca el contacto por email/telefono y, si existe, lo devuelve (matched);
+    si no, lo crea. Requiere al menos email o telefono. Devuelve
+    {"contact": {...}, "created": bool}. Util para obtener el contact_id de una
+    persona, creandola solo si hace falta.
+    """
+    if not email and not phone:
+        raise ValueError("Se requiere al menos 'email' o 'phone'.")
+    return _booking.resolve_contact(
+        email=email,
+        phone=phone,
+        first_name=first_name,
+        last_name=last_name,
+        source=source,
+    )
+
+
+@mcp.tool()
+def book_appointment(
+    start_time: str,
+    email: str | None = None,
+    phone: str | None = None,
+    first_name: str | None = None,
+    last_name: str | None = None,
+    source: str | None = None,
+    end_time: str | None = None,
+    title: str | None = None,
+    calendar_id: str | None = None,
+) -> dict[str, Any]:
+    """Reserva una cita para una persona en un solo paso.
+
+    Resuelve el contacto (find-or-create), autoresuelve el calendario y crea la
+    cita. start_time va en ISO 8601 con offset (ej. 2026-06-20T15:00:00-06:00).
+    Requiere start_time y al menos email o telefono. Devuelve status "booked"
+    con la cita y el contacto, o status "calendar_selection_required" con los
+    calendarios disponibles si hay que elegir: en ese caso, vuelve a llamar
+    pasando un calendar_id.
+    """
+    if not email and not phone:
+        raise ValueError("Se requiere al menos 'email' o 'phone'.")
+    return _booking.book_appointment(
+        start_time=start_time,
+        email=email,
+        phone=phone,
+        first_name=first_name,
+        last_name=last_name,
+        source=source,
+        end_time=end_time,
+        title=title,
+        calendar_id=calendar_id,
     )
 
 

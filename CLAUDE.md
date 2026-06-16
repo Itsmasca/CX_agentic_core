@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 CXAPP is a Python backend that wraps the **GoHighLevel (GHL) API V2** (LeadConnector, `services.leadconnectorhq.com`) behind a FastAPI server. It is organized as **vertical slices**: each GHL domain (calendar, contacts, and future conversaciones/etc.) is a self-contained module owning its router, schemas, and service.
 
-The **calendar** and **contacts** slices are implemented; `src/modules/{Admin,User,Subaccount,Conversaciones}` are empty scaffolding. The contacts slice currently exposes `POST /contacts` (create) and a matching `create_contact` MCP tool.
+The **calendar** and **contacts** slices are implemented; `src/modules/{Admin,User,Subaccount,Conversaciones}` are empty scaffolding. The contacts slice exposes `POST /contacts` (create), `GET /contacts` (search/list), and `PUT /contacts/{id}` (partial update), each with a matching MCP tool (`create_contact`, `search_contacts`, `update_contact`). Note: GHL's `POST /contacts/search` (behind `GET /contacts`) is **eventually consistent** — right after a create/update the search index may lag a few seconds; the create/update response body is the authoritative, immediate view.
 
 ## Commands
 
@@ -69,5 +69,5 @@ Key points a new slice must respect:
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan
-at specs/001-contact-create/plan.md
+at specs/003-book-appointment-for-contact/plan.md
 <!-- SPECKIT END -->

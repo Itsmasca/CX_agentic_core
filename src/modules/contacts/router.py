@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends
 from core.client import GHLClient
 from core.deps import get_client
 
-from .schemas import CreateContactRequest
+from .schemas import CreateContactRequest, UpdateContactRequest
 from .service import ContactsService
 
 router = APIRouter(prefix="/contacts", tags=["contacts"])
@@ -34,3 +34,20 @@ def create_contact(body: CreateContactRequest, service: ServiceDep):
         tags=body.tags,
         source=body.source,
     )
+
+
+@router.get("")
+def search_contacts(
+    service: ServiceDep,
+    query: str | None = None,
+    limit: int = 20,
+):
+    """Busca/lista contactos. `query` es texto libre (nombre/email/telefono);
+    omitelo para listar. `limit` por defecto 20, maximo 100."""
+    return service.search_contacts(query=query, limit=limit)
+
+
+@router.put("/{contact_id}")
+def update_contact(contact_id: str, body: UpdateContactRequest, service: ServiceDep):
+    """Actualiza campos de un contacto existente (update parcial)."""
+    return service.update_contact(contact_id, **body.to_ghl_payload())

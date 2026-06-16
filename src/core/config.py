@@ -25,6 +25,9 @@ class GHLConfig:
     base_url: str = BASE_URL
     api_version: str = API_VERSION
     timeout: float = 30.0
+    # Calendario por defecto (opcional) para resolver reservas cuando hay varios
+    # calendarios y el consumidor no especifica uno. Ausente = sin default.
+    default_calendar_id: str | None = None
 
     @classmethod
     def from_env(cls) -> GHLConfig:
@@ -51,4 +54,5 @@ class GHLConfig:
             location_id=location_id,
             base_url=os.environ.get("GHL_BASE_URL", BASE_URL),
             api_version=os.environ.get("GHL_API_VERSION", API_VERSION),
+            default_calendar_id=os.environ.get("GHL_DEFAULT_CALENDAR_ID"),
         )
